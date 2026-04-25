@@ -28,6 +28,7 @@ export default function NewRentalPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
+  const [agreementNo, setAgreementNo] = useState('');
   const [patientName, setPatientName] = useState('');
   const [contactNo, setContactNo] = useState('');
   const [locationType, setLocationType] = useState<'hospital' | 'home'>('hospital');
@@ -89,6 +90,7 @@ export default function NewRentalPage() {
     setSubmitting(true);
     try {
       const payload = {
+        agreement_no: agreementNo.trim() || null,
         patient_name: patientName.trim(),
         contact_no: contactNo.trim() || null,
         location_type: locationType,
@@ -142,6 +144,19 @@ export default function NewRentalPage() {
 
       <form onSubmit={handleSubmit}>
         <Stack spacing={2}>
+          <Paper sx={{ p: 2 }}>
+            <Typography variant="subtitle2" sx={{ color: '#1A237E', fontWeight: 700, mb: 1.5 }}>
+              Agreement
+            </Typography>
+            <TextField
+              label="Agreement No."
+              value={agreementNo}
+              onChange={(e) => setAgreementNo(e.target.value)}
+              fullWidth
+              placeholder="e.g. PLS-2026-0042"
+            />
+          </Paper>
+
           <Paper sx={{ p: 2 }}>
             <Typography variant="subtitle2" sx={{ color: '#1A237E', fontWeight: 700, mb: 1.5 }}>
               Patient

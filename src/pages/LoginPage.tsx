@@ -10,16 +10,23 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
+import PhoneOutlinedIcon from '@mui/icons-material/PhoneOutlined';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined';
 import logo from '../assets/logo.png';
 import { useAuth } from '../contexts/AuthContext';
 
+function toE164(input: string): string | null {
+  const digits = input.replace(/\D/g, '');
+  if (digits.length === 10) return `+91${digits}`;
+  if (digits.length === 12 && digits.startsWith('91')) return `+${digits}`;
+  return null;
+}
+
 export default function LoginPage() {
   const { signIn } = useAuth();
-  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -27,16 +34,34 @@ export default function LoginPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!email.trim() || !password) {
-      setErr('Email and password are required');
+    const e164 = toE164(phone);
+    if (!e164) {
+      setErr('Enter a valid 10-digit phone number');
+      return;
+    }
+    if (!password) {
+      setErr('Enter your password');
       return;
     }
     setLoading(true);
     setErr(null);
+    // eslint-disable-next-line no-console
+    console.log('[login] attempting sign-in', {
+      phoneRaw: phone,
+      phoneE164: e164,
+      passwordLength: password.length,
+    });
     try {
-      await signIn(email.trim().toLowerCase(), password);
+      await signIn(e164, password);
+      console.log('[login] success');
     } catch (e: any) {
-      setErr(e?.message ?? 'Login failed');
+      console.error('[login] failed', {
+        name: e?.name,
+        status: e?.status,
+        message: e?.message,
+        code: e?.code,
+      });
+      setErr(`${e?.code ?? e?.status ?? 'err'}: ${e?.message ?? 'Login failed'}`);
     } finally {
       setLoading(false);
     }
@@ -90,17 +115,20 @@ export default function LoginPage() {
             )}
 
             <TextField
-              label="Email"
-              type="email"
+              label="Phone"
+              type="tel"
               fullWidth
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="tel"
+              placeholder="10-digit number"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, ''))}
+              inputProps={{ maxLength: 10, inputMode: 'numeric' }}
               sx={{ mb: 2 }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <EmailOutlinedIcon />
+                    <PhoneOutlinedIcon sx={{ mr: 0.5 }} />
+                    <span style={{ color: '#546E7A' }}>+91</span>
                   </InputAdornment>
                 ),
               }}

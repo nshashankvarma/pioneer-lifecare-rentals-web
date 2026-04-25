@@ -33,11 +33,18 @@ export default function ManageUsersPage() {
 
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [role, setRole] = useState<'user' | 'admin'>('user');
   const [submitting, setSubmitting] = useState(false);
+
+  function toE164(input: string): string | null {
+    const digits = input.replace(/\D/g, '');
+    if (digits.length === 10) return `+91${digits}`;
+    if (digits.length === 12 && digits.startsWith('91')) return `+${digits}`;
+    return null;
+  }
 
   const [toast, setToast] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -54,7 +61,8 @@ export default function ManageUsersPage() {
 
   async function handleAdd() {
     if (!name.trim()) return setErr('Full name is required');
-    if (!email.trim() || !email.includes('@')) return setErr('Valid email required');
+    const e164 = toE164(phone);
+    if (!e164) return setErr('Valid 10-digit phone number required');
     if (password.length < 6) return setErr('Password ≥ 6 characters');
     if (!session) return setErr('Not signed in');
 
@@ -69,7 +77,7 @@ export default function ManageUsersPage() {
           apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
         },
         body: JSON.stringify({
-          email: email.trim().toLowerCase(),
+          phone: e164,
           password,
           full_name: name.trim(),
           role,
@@ -86,7 +94,7 @@ export default function ManageUsersPage() {
       setToast(`Added ${name.trim()} as ${role}`);
       setOpen(false);
       setName('');
-      setEmail('');
+      setPhone('');
       setPassword('');
       setRole('user');
       await fetchUsers();
@@ -180,11 +188,16 @@ export default function ManageUsersPage() {
           <Stack spacing={1.5} sx={{ mt: 1 }}>
             <TextField label="Full Name *" value={name} onChange={(e) => setName(e.target.value)} fullWidth />
             <TextField
-              label="Email *"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              label="Phone *"
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, ''))}
+              inputProps={{ maxLength: 10, inputMode: 'numeric' }}
+              placeholder="10-digit number"
               fullWidth
+              InputProps={{
+                startAdornment: <span style={{ color: '#546E7A', marginRight: 6 }}>+91</span>,
+              }}
             />
             <TextField
               label="Password * (min 6)"

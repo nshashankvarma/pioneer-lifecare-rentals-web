@@ -154,6 +154,11 @@ export default function RentalDetailPage() {
                 {rental.contact_no}
               </Typography>
             )}
+            {rental.agreement_no && (
+              <Typography variant="caption" sx={{ color: '#78909C', mt: 0.5, display: 'block' }}>
+                Agreement: {rental.agreement_no}
+              </Typography>
+            )}
           </Box>
         </Paper>
 

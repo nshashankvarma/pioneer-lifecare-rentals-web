@@ -33,6 +33,7 @@ export interface RentalItem {
 
 export interface Rental {
   id: string;
+  agreement_no?: string | null;
   patient_name: string;
   contact_no?: string | null;
   location_type: LocationType;
