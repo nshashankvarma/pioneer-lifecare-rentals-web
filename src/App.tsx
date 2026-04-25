@@ -11,6 +11,7 @@ import AdminPage from './pages/admin/AdminPage';
 import ManageItemsPage from './pages/admin/ManageItemsPage';
 import ManageHospitalsPage from './pages/admin/ManageHospitalsPage';
 import ManageUsersPage from './pages/admin/ManageUsersPage';
+import EquipmentHistoryPage from './pages/admin/EquipmentHistoryPage';
 
 function AdminGuard({ children }: { children: React.ReactNode }) {
   const { isAdmin, loading } = useAuth();
@@ -61,6 +62,14 @@ export default function App() {
           element={
             <AdminGuard>
               <ManageHospitalsPage />
+            </AdminGuard>
+          }
+        />
+        <Route
+          path="admin/equipment-history"
+          element={
+            <AdminGuard>
+              <EquipmentHistoryPage />
             </AdminGuard>
           }
         />

@@ -12,7 +12,6 @@ import {
 } from '@mui/material';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import EventOutlinedIcon from '@mui/icons-material/EventOutlined';
 import {
   addMonths,
   differenceInCalendarDays,
@@ -28,23 +27,27 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import type { Hospital, Rental, RentalStatus } from '../types';
-import StatusBadge from '../components/StatusBadge';
+import RentalCard from '../components/RentalCard';
 import { accentFor } from '../theme';
 
 const ALL = '__all__';
 type Filter = 'all' | RentalStatus;
 
 function computeDays(rental: Rental, month: Date) {
+  // Billing stops when the equipment comes off the patient (disconnected_date),
+  // not when it's physically returned. Fall back to returned_date for legacy
+  // rentals that predate the disconnect-status feature.
   const today = startOfDay(new Date());
   const monthStart = startOfMonth(month);
   const monthEnd = endOfMonth(month);
   const issued = parseISO(rental.issued_date);
-  const closed = rental.returned_date ? parseISO(rental.returned_date) : today;
-  const totalDays = Math.max(0, differenceInCalendarDays(closed, issued) + 1);
+  const endRaw = rental.disconnected_date ?? rental.returned_date;
+  const end = endRaw ? parseISO(endRaw) : today;
+  const totalDays = Math.max(0, differenceInCalendarDays(end, issued) + 1);
 
-  if (issued > monthEnd || closed < monthStart) return { monthDays: 0, totalDays };
+  if (issued > monthEnd || end < monthStart) return { monthDays: 0, totalDays };
   const effStart = maxDate([issued, monthStart]);
-  const effEnd = minDate([closed, monthEnd, today]);
+  const effEnd = minDate([end, monthEnd, today]);
   const monthDays = Math.max(0, differenceInCalendarDays(effEnd, effStart) + 1);
   return { monthDays, totalDays };
 }
@@ -239,42 +242,27 @@ export default function ReportsPage() {
           <Typography variant="subtitle1">No rentals match the filter</Typography>
         </Box>
       ) : (
-        <Box sx={{ display: 'grid', gap: 1.5, gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' } }}>
+        <Box
+          sx={{
+            display: 'grid',
+            gap: 1.5,
+            gridTemplateColumns: {
+              xs: 'minmax(0, 1fr)',
+              md: 'repeat(2, minmax(0, 1fr))',
+              lg: 'repeat(3, minmax(0, 1fr))',
+            },
+          }}
+        >
           {filtered.map((item) => {
             const accent = accentFor(item.rental.item_name);
             const sameAsTotal = item.monthDays === item.totalDays;
             return (
-              <Paper
+              <RentalCard
                 key={item.rental.id}
+                rental={item.rental}
                 onClick={() => navigate(`/rental/${item.rental.id}`)}
-                sx={{
-                  display: 'flex',
-                  cursor: 'pointer',
-                  overflow: 'hidden',
-                  '&:hover': { boxShadow: 4 },
-                }}
-              >
-                <Box sx={{ width: 5, bgcolor: accent.bar }} />
-                <Box sx={{ flex: 1, p: 1.5 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
-                    <Typography variant="subtitle1" sx={{ color: '#1A237E', fontWeight: 700 }} noWrap>
-                      {item.rental.patient_name}
-                    </Typography>
-                    <StatusBadge status={item.rental.status} />
-                  </Box>
-                  <Typography variant="body2" sx={{ color: accent.ink, fontWeight: 600, mb: 0.5 }} noWrap>
-                    {item.rental.item_name}
-                  </Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.75 }}>
-                    <EventOutlinedIcon sx={{ fontSize: 13, color: '#90A4AE' }} />
-                    <Typography variant="caption" sx={{ color: '#90A4AE' }}>
-                      {format(parseISO(item.rental.issued_date), 'dd MMM yyyy')} →{' '}
-                      {item.rental.returned_date
-                        ? format(parseISO(item.rental.returned_date), 'dd MMM yyyy')
-                        : 'active'}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                footer={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
                     <Box
                       sx={{
                         bgcolor: accent.tint,
@@ -294,8 +282,8 @@ export default function ReportsPage() {
                       </Typography>
                     )}
                   </Box>
-                </Box>
-              </Paper>
+                }
+              />
             );
           })}
         </Box>

@@ -2,6 +2,7 @@ import { Box, Paper, Stack, Typography } from '@mui/material';
 import PeopleOutlineIcon from '@mui/icons-material/PeopleOutline';
 import MedicalServicesOutlinedIcon from '@mui/icons-material/MedicalServicesOutlined';
 import BusinessOutlinedIcon from '@mui/icons-material/BusinessOutlined';
+import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { useNavigate } from 'react-router-dom';
 import type { ReactNode } from 'react';
@@ -93,6 +94,13 @@ export default function AdminPage() {
           subtitle="Hospitals selectable when creating rentals"
           color="#6A1B9A"
           onClick={() => navigate('/admin/hospitals')}
+        />
+        <Tile
+          icon={<HistoryOutlinedIcon />}
+          title="Equipment Rental History"
+          subtitle="See past patients per equipment unit"
+          color="#00897B"
+          onClick={() => navigate('/admin/equipment-history')}
         />
       </Stack>
     </Box>

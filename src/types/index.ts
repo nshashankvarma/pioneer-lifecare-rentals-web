@@ -1,5 +1,5 @@
 export type UserRole = 'admin' | 'user';
-export type RentalStatus = 'active' | 'closed';
+export type RentalStatus = 'active' | 'disconnected' | 'closed';
 export type LocationType = 'hospital' | 'home';
 
 export interface Profile {
@@ -34,6 +34,7 @@ export interface RentalItem {
 export interface Rental {
   id: string;
   agreement_no?: string | null;
+  patient_id?: string | null;
   patient_name: string;
   contact_no?: string | null;
   location_type: LocationType;
@@ -42,12 +43,15 @@ export interface Rental {
   house_address?: string | null;
   item_id?: string | null;
   item_name: string;
+  equipment_id?: string | null;
   issued_by?: string | null;
   issued_date: string;
   returned_date?: string | null;
   status: RentalStatus;
   notes?: string | null;
   closed_by?: string | null;
+  disconnected_date?: string | null;
+  disconnected_by?: string | null;
   advance_amount?: number | null;
   monthly_charge?: number | null;
   created_at: string;

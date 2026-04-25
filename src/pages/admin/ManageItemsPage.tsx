@@ -19,6 +19,7 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import MedicalServicesOutlinedIcon from '@mui/icons-material/MedicalServicesOutlined';
 import { supabase } from '../../lib/supabase';
 import type { RentalItem } from '../../types';
@@ -33,7 +34,9 @@ export default function ManageItemsPage() {
   const [loading, setLoading] = useState(true);
 
   const [editing, setEditing] = useState<EnrichedItem | null>(null);
+  const [editName, setEditName] = useState('');
   const [editQty, setEditQty] = useState('');
+  const [editDesc, setEditDesc] = useState('');
   const [saving, setSaving] = useState(false);
 
   const [addOpen, setAddOpen] = useState(false);
@@ -68,6 +71,7 @@ export default function ManageItemsPage() {
 
   async function handleSaveEdit() {
     if (!editing) return;
+    if (!editName.trim()) return setErr('Name is required');
     const q = parseInt(editQty, 10);
     if (!Number.isFinite(q) || q < 0) return setErr('Quantity must be 0 or more');
     if (q < (editing._inUse ?? 0))
@@ -76,18 +80,48 @@ export default function ManageItemsPage() {
     try {
       const { error } = await supabase
         .from('rental_items')
-        .update({ total_quantity: q })
+        .update({
+          name: editName.trim(),
+          total_quantity: q,
+          description: editDesc.trim() || null,
+        })
         .eq('id', editing.id);
       if (error) throw error;
-      setToast(`Updated ${editing.name} to ${q}`);
+      setToast(`Updated ${editName.trim()}`);
       setEditing(null);
+      setEditName('');
       setEditQty('');
+      setEditDesc('');
       await fetchItems();
     } catch (e: any) {
       setErr(e?.message ?? 'Failed to update');
     } finally {
       setSaving(false);
     }
+  }
+
+  async function handleDelete(item: EnrichedItem) {
+    if (
+      !window.confirm(
+        `Delete "${item.name}" from the catalog? Existing rentals keep their item name. Blocked if any rental still references this item.`
+      )
+    )
+      return;
+    const { count } = await supabase
+      .from('rentals')
+      .select('id', { count: 'exact', head: true })
+      .eq('item_id', item.id);
+    if ((count ?? 0) > 0) {
+      setErr(`Cannot delete — ${count} rental(s) reference this item`);
+      return;
+    }
+    const { error } = await supabase.from('rental_items').delete().eq('id', item.id);
+    if (error) {
+      setErr(error.message);
+      return;
+    }
+    setToast(`Removed ${item.name}`);
+    await fetchItems();
   }
 
   async function handleAdd() {
@@ -192,11 +226,16 @@ export default function ManageItemsPage() {
                 <IconButton
                   onClick={() => {
                     setEditing(item);
+                    setEditName(item.name);
                     setEditQty(String(item.total_quantity ?? 0));
+                    setEditDesc(item.description ?? '');
                   }}
                   size="small"
                 >
                   <EditOutlinedIcon fontSize="small" />
+                </IconButton>
+                <IconButton onClick={() => handleDelete(item)} size="small" sx={{ color: '#C62828' }}>
+                  <DeleteOutlineIcon fontSize="small" />
                 </IconButton>
               </Paper>
             );
@@ -213,23 +252,30 @@ export default function ManageItemsPage() {
       </Fab>
 
       <Dialog open={!!editing} onClose={() => setEditing(null)} fullWidth maxWidth="xs">
-        <DialogTitle sx={{ color: '#1A237E', fontWeight: 700 }}>Edit Quantity</DialogTitle>
+        <DialogTitle sx={{ color: '#1A237E', fontWeight: 700 }}>Edit Equipment</DialogTitle>
         <DialogContent>
-          <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
-            {editing?.name}
-          </Typography>
           <Typography variant="caption" sx={{ color: '#90A4AE' }}>
             {editing?._inUse ?? 0} currently rented out
           </Typography>
-          <TextField
-            label="Total quantity"
-            value={editQty}
-            onChange={(e) => setEditQty(e.target.value.replace(/[^0-9]/g, ''))}
-            type="number"
-            inputMode="numeric"
-            fullWidth
-            sx={{ mt: 2 }}
-          />
+          <Stack spacing={1.5} sx={{ mt: 1 }}>
+            <TextField label="Name *" value={editName} onChange={(e) => setEditName(e.target.value)} fullWidth />
+            <TextField
+              label="Total quantity"
+              value={editQty}
+              onChange={(e) => setEditQty(e.target.value.replace(/[^0-9]/g, ''))}
+              type="number"
+              inputMode="numeric"
+              fullWidth
+            />
+            <TextField
+              label="Description"
+              value={editDesc}
+              onChange={(e) => setEditDesc(e.target.value)}
+              fullWidth
+              multiline
+              minRows={2}
+            />
+          </Stack>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setEditing(null)} disabled={saving}>

@@ -14,9 +14,9 @@ export default function AppLoadingScreen() {
         gap: 1,
       }}
     >
-      <Box component="img" src={logo} alt="Pioneer Lifecare" sx={{ width: 140, height: 140, objectFit: 'contain' }} />
+      <Box component="img" src={logo} alt="Pioneer Lifecare Systems" sx={{ width: 140, height: 140, objectFit: 'contain' }} />
       <Typography variant="h6" sx={{ color: '#1A237E', fontWeight: 700 }}>
-        Pioneer Lifecare
+        Pioneer Lifecare Systems
       </Typography>
       <Typography variant="body2" sx={{ color: '#78909C' }}>
         Equipment Rental Management

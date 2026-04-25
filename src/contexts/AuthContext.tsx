@@ -33,36 +33,62 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
+
+    // Safety net: if getSession() hangs (rare network edge case), unblock the
+    // UI after 5s. We do NOT sign out here — the session may still be valid;
+    // we just stop showing the loading screen so the user can interact.
+    const timeoutId = setTimeout(() => {
+      if (!cancelled) {
+        console.warn('[auth] getSession timed out — unblocking UI');
+        setLoading(false);
+      }
+    }, 5000);
+
     supabase.auth
       .getSession()
-      .then(async ({ data: { session } }) => {
+      .then(({ data: { session } }) => {
         if (cancelled) return;
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
-          await fetchProfile(session.user.id).catch((e) =>
+          fetchProfile(session.user.id).catch((e) =>
             console.warn('[auth] fetchProfile failed', e)
           );
         }
       })
       .catch((e) => console.warn('[auth] getSession failed', e))
       .finally(() => {
+        clearTimeout(timeoutId);
         if (!cancelled) setLoading(false);
       });
 
+    // IMPORTANT: do NOT await Supabase queries inside this callback. The auth
+    // library holds an internal lock for the duration of the callback, and
+    // any `supabase.from(...)` call needs that same lock to attach the auth
+    // header — awaiting here deadlocks on tab refresh / new tab where the
+    // INITIAL_SESSION event fires synchronously with a persisted session.
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        await fetchProfile(session.user.id);
+        const userId = session.user.id;
+        setTimeout(() => {
+          fetchProfile(userId).catch((e) =>
+            console.warn('[auth] fetchProfile failed', e)
+          );
+        }, 0);
       } else {
         setProfile(null);
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      cancelled = true;
+      clearTimeout(timeoutId);
+      subscription.unsubscribe();
+    };
   }, []);
 
   async function signIn(phone: string, password: string) {

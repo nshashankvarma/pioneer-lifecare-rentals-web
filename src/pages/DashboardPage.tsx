@@ -29,7 +29,7 @@ export default function DashboardPage() {
     const { data, error } = await supabase
       .from('rentals')
       .select('*, issuer:issued_by(id, full_name), closer:closed_by(id, full_name)')
-      .eq('status', 'active')
+      .in('status', ['active', 'disconnected'])
       .order('created_at', { ascending: false });
     if (error) setErr(error.message);
     else setRentals((data as Rental[]) ?? []);
@@ -75,7 +75,10 @@ export default function DashboardPage() {
         r.patient_name.toLowerCase().includes(q) ||
         r.item_name.toLowerCase().includes(q) ||
         r.hospital_name?.toLowerCase().includes(q) ||
-        r.contact_no?.includes(q)
+        r.contact_no?.includes(q) ||
+        r.agreement_no?.toLowerCase().includes(q) ||
+        r.patient_id?.toLowerCase().includes(q) ||
+        r.equipment_id?.toLowerCase().includes(q)
       );
     });
   }, [rentals, search, selectedItem]);
@@ -93,7 +96,7 @@ export default function DashboardPage() {
         </Typography>
         <TextField
           size="small"
-          placeholder="Search patient, item, hospital..."
+          placeholder="Search patient, item, hospital, agreement..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           sx={{ minWidth: { sm: 320 } }}
@@ -161,10 +164,10 @@ export default function DashboardPage() {
             display: 'grid',
             gap: 1.5,
             gridTemplateColumns: {
-              xs: '1fr',
-              sm: 'repeat(2, 1fr)',
-              md: 'repeat(2, 1fr)',
-              lg: 'repeat(3, 1fr)',
+              xs: 'minmax(0, 1fr)',
+              sm: 'repeat(2, minmax(0, 1fr))',
+              md: 'repeat(2, minmax(0, 1fr))',
+              lg: 'repeat(3, minmax(0, 1fr))',
             },
           }}
         >

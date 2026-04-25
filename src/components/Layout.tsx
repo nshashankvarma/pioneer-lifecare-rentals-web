@@ -78,7 +78,7 @@ export default function Layout() {
             />
           )}
           <Typography variant="h6" sx={{ flex: 1, color: '#fff' }} noWrap>
-            Pioneer Lifecare
+            Pioneer Lifecare Systems
           </Typography>
           <Tooltip title={profile?.full_name ?? ''}>
             <Avatar sx={{ width: 32, height: 32, mr: 1, bgcolor: '#0D47A1', fontSize: 14 }}>
@@ -115,7 +115,7 @@ export default function Layout() {
               sx={{ width: 32, height: 32, objectFit: 'contain' }}
             />
             <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#1A237E' }}>
-              Pioneer Lifecare
+              Pioneer Lifecare Systems
             </Typography>
           </Toolbar>
           <List>

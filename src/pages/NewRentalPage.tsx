@@ -29,6 +29,7 @@ export default function NewRentalPage() {
   const { user } = useAuth();
 
   const [agreementNo, setAgreementNo] = useState('');
+  const [patientId, setPatientId] = useState('');
   const [patientName, setPatientName] = useState('');
   const [contactNo, setContactNo] = useState('');
   const [locationType, setLocationType] = useState<'hospital' | 'home'>('hospital');
@@ -38,6 +39,7 @@ export default function NewRentalPage() {
 
   const [items, setItems] = useState<RentalItem[]>([]);
   const [selectedItem, setSelectedItem] = useState<RentalItem | null>(null);
+  const [equipmentId, setEquipmentId] = useState('');
   const [hospitals, setHospitals] = useState<Hospital[]>([]);
 
   const [issuedAt, setIssuedAt] = useState(() => new Date().toISOString().slice(0, 16));
@@ -91,6 +93,7 @@ export default function NewRentalPage() {
     try {
       const payload = {
         agreement_no: agreementNo.trim() || null,
+        patient_id: patientId.trim() || null,
         patient_name: patientName.trim(),
         contact_no: contactNo.trim() || null,
         location_type: locationType,
@@ -99,6 +102,7 @@ export default function NewRentalPage() {
         house_address: locationType === 'home' ? houseAddress.trim() : null,
         item_id: selectedItem.id,
         item_name: selectedItem.name,
+        equipment_id: equipmentId.trim() || null,
         issued_by: user?.id,
         issued_date: new Date(issuedAt).toISOString(),
         notes: notes.trim() || null,
@@ -170,6 +174,13 @@ export default function NewRentalPage() {
                 required
               />
               <TextField
+                label="Patient ID"
+                value={patientId}
+                onChange={(e) => setPatientId(e.target.value)}
+                placeholder="Hospital MRN, internal ID, etc."
+                fullWidth
+              />
+              <TextField
                 label="Contact No."
                 value={contactNo}
                 onChange={(e) => setContactNo(e.target.value)}
@@ -236,34 +247,43 @@ export default function NewRentalPage() {
             <Typography variant="subtitle2" sx={{ color: '#1A237E', fontWeight: 700, mb: 1.5 }}>
               Equipment
             </Typography>
-            <TextField
-              select
-              fullWidth
-              label="Equipment *"
-              value={selectedItem?.id ?? ''}
-              onChange={(e) =>
-                setSelectedItem(items.find((i) => i.id === e.target.value) ?? null)
-              }
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <MedicalServicesOutlinedIcon />
-                  </InputAdornment>
-                ),
-              }}
-            >
-              {items.map((item) => {
-                const avail = item.available_quantity ?? 0;
-                return (
-                  <MenuItem key={item.id} value={item.id} disabled={avail <= 0}>
-                    {item.name}{' '}
-                    <Typography component="span" variant="caption" sx={{ ml: 1, color: '#90A4AE' }}>
-                      ({avail <= 0 ? 'out of stock' : `${avail} available`})
-                    </Typography>
-                  </MenuItem>
-                );
-              })}
-            </TextField>
+            <Stack spacing={1.5}>
+              <TextField
+                select
+                fullWidth
+                label="Equipment *"
+                value={selectedItem?.id ?? ''}
+                onChange={(e) =>
+                  setSelectedItem(items.find((i) => i.id === e.target.value) ?? null)
+                }
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <MedicalServicesOutlinedIcon />
+                    </InputAdornment>
+                  ),
+                }}
+              >
+                {items.map((item) => {
+                  const avail = item.available_quantity ?? 0;
+                  return (
+                    <MenuItem key={item.id} value={item.id} disabled={avail <= 0}>
+                      {item.name}{' '}
+                      <Typography component="span" variant="caption" sx={{ ml: 1, color: '#90A4AE' }}>
+                        ({avail <= 0 ? 'out of stock' : `${avail} available`})
+                      </Typography>
+                    </MenuItem>
+                  );
+                })}
+              </TextField>
+              <TextField
+                label="Equipment ID"
+                value={equipmentId}
+                onChange={(e) => setEquipmentId(e.target.value)}
+                placeholder="Serial / asset tag of the unit issued"
+                fullWidth
+              />
+            </Stack>
           </Paper>
 
           <Paper sx={{ p: 2 }}>
